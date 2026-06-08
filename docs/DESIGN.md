@@ -51,9 +51,11 @@ The smallest thing that replaces "open a browser, type an IP:port, log in" with
 1. `npm create tauri-app@latest` (vanilla/TS front, minimal) inside this repo;
    reconcile with the existing `CLAUDE.md` / `README.md` / `docs/`.
 2. Hardcode-then-config the endpoint; load it into a full-screen webview window.
-3. Brand: app name, icon, window title, no URL bar.
+3. Brand: app name, window title, dark `#0A0A0A` chrome, no URL bar — follow
+   "Brand & UI/UX guidelines" below. Obtain the SovranaAI logo (see §4) and
+   generate `icon.icns` / `icon.ico` + Tauri's PNG icon set from the "S" mark.
 4. `npm run tauri build` on Windows → first `.exe`/`.msi`. Verify it opens a
-   live Open WebUI endpoint full-screen.
+   live Open WebUI endpoint full-screen and passes the §6 brand checklist.
 5. Document the real build commands back into `CLAUDE.md`.
 
 ## Open questions for the build session
@@ -64,3 +66,127 @@ The smallest thing that replaces "open a browser, type an IP:port, log in" with
   file shipped alongside the binary?
 - Windows packaging: `.msi` (WiX) vs `.exe` (NSIS) — pick the lighter one for an
   unsigned v0.0.1.
+
+---
+
+# Brand & UI/UX guidelines (MUST follow)
+
+These are binding for any pixel SovranaConnect renders — the app's own chrome
+(window, splash, settings, error/empty states). The embedded service UI (Open
+WebUI) keeps its own theme; these rules govern everything *around* it.
+
+**Authority.** The brand source of truth is the vault
+`sovrana-ai-vault/wiki/concepts/brand-specs.md`, **reconciled to the v2 pitch
+deck per decision D32**: the primary accent is **`#1A6BFF`** (NOT the older
+`#3B82F6` still written in `brand-specs.md` from v6.1 — that file is pending
+reconciliation; do not copy its accent). When in doubt, follow this section.
+
+## 1. Theme — dark, always
+
+Dark theme is mandatory and deliberate (premium, serious, "AI seria per aziende
+serie" — regulated entities, sensitive data). **Never** ship a light/white app
+surface. No light-gray fills that wash out against the near-black.
+
+## 2. Palette — these tokens only
+
+Strict palette. Every element lands on one of these. No green / gold / red /
+purple / sentiment colors.
+
+| Role | Hex | Use |
+|---|---|---|
+| BG Dark | `#0A0A0A` | window background, splash, outermost surface |
+| Card Dark | `#141414` | panels, settings cards, dialogs, modals |
+| Card Border | `#272727` | thin 1px borders, dividers, separators |
+| **Brand Blue (accent)** | `#1A6BFF` | THE single accent: primary action, focus ring, active state, links, the brand tick, spinner |
+| White | `#FFFFFF` | titles, primary text |
+| Gray | `#6B7280` | secondary text, captions, disclaimers, placeholder |
+| Light Blue (rare) | `#78B4FF` | only if a second blue is unavoidable (e.g. hover on accent). Default: don't use it. |
+
+**One-accent rule.** One `#1A6BFF` read-first element per view. A single strong
+blue action beats five blue labels. Don't scatter the accent.
+
+## 3. Typography
+
+- **Native font stack** for an Apple-correct feel:
+  `-apple-system, "SF Pro Text", "Segoe UI Variable", "Segoe UI", Arial, "Helvetica Neue", sans-serif`.
+  → SF on macOS, Segoe on Windows, **Arial** as the brand-canonical fallback.
+- **No serif, ever.** No Times, no Comic Sans, no decorative faces.
+- Scale (suggested, refine in build): Title 22–26px bold · Section 16px bold ·
+  Body 14px / line-height 1.6 · Caption/footer 11–12px · Kicker 11px bold
+  UPPERCASE with subtle letter-spacing.
+- Body line-height generous (1.5–1.65). Titles tighter (1.2).
+
+> **Deviation flag:** `brand-specs.md` makes Arial the canonical face. Using the
+> system font for native chrome is a deliberate, Apple-aligned choice — track it
+> as a brand-spec reconciliation (like the D32 accent) rather than silently
+> diverging. Arial stays in the stack as the explicit fallback.
+
+## 4. Logo
+
+- The mark is the SovranaAI **"S sovrana" wordmark** + the **"S" icon** (icon-only
+  for the app/dock/taskbar).
+- **Assets to obtain (build-session task), do NOT fabricate:** canonical sources
+  are the deck PNGs (`raw/presentazioni/SovranaAI_Proposta_v6.1.pptx` →
+  `ppt/media/image1.png` cover, `image2.png` footer) or request current SVG/PNG
+  from the operator. Generate `icon.icns` (macOS) + `icon.ico` (Windows) +
+  Tauri's required PNG set from the **icon mark**. Do **not** hotlink the
+  MailerLite-hosted email logo URLs into the app.
+- **Placement:** always **left-aligned**, never centered. **Never distort** —
+  scale by height only, preserve aspect ratio. Give it clear space; don't crowd.
+
+## 5. Apple / Aqua design language — and how it reconciles with "flat brand"
+
+Aim: **minimal, elegant, intuitive, simple** — the macOS feel. There is a real
+tension to resolve: modern Apple UI uses **materials** (translucency, vibrancy,
+depth, soft motion) while `brand-specs.md` says "flat, no gradient, no shadow,
+no glow." **Resolution for the app:**
+
+- The "flat, no gradient/shadow" rule was written for **static PPTX decks**. A
+  native app may use Apple **materials sparingly** as the *one* concession to the
+  Aqua feel — translucency/vibrancy is the modern macOS idiom, not 2003 glossy
+  gel buttons. "Aqua style" here = **today's macOS** (clarity, depth-through-
+  blur, restraint), **not** skeuomorphic gloss, pinstripes, or candy gradients.
+- **Allowed (use with restraint):**
+  - A vibrancy/translucent window background or sidebar (macOS `NSVisualEffect`
+    / Tauri window effects) over `#0A0A0A`, kept dark and subtle.
+  - **One** soft, low-opacity elevation shadow to float a modal/dialog off the
+    backdrop. Not on every card.
+  - Gentle, fast motion: 150–250ms ease-out for view transitions, focus, hover.
+    Spring/physics easing is fine. No bouncy, no spinning, no attention-grabbing.
+  - Rounded corners (≈10–12px on cards/buttons, matching macOS), hairline
+    `#272727` borders.
+- **Still forbidden (brand floor holds):** color gradients as fill, heavy drop
+  shadows / glows, sentiment colors, more than one accent per view, busy
+  textures, decorative chrome, anything that reads as "AI magic."
+
+### Apple-feel principles (apply throughout)
+
+- **Generous whitespace.** Let dark surfaces breathe; don't fill the window.
+  Align to an 8px spacing grid (8/16/24/32). Outer padding ≥ 24px.
+- **One primary action per view.** It's the `#1A6BFF` element. Secondary actions
+  are quiet (gray text/ghost buttons).
+- **Content first, chrome invisible.** No browser URL bar, no visible menus you
+  don't need. The service should feel like it *is* the app.
+- **Clarity over cleverness.** Plain Italian labels, obvious affordances, no
+  jargon in the UI. A non-technical owner (the buyer) must get it instantly.
+- **Calm, consistent states.** Loading = a single centered `#1A6BFF` spinner on
+  `#0A0A0A`. Error/empty = one short line of white text + one quiet action. Never
+  a stack trace, never a raw IP/error code in the client's face.
+- **Crisp at any DPI.** Vector/SVG icons, multi-resolution app icon, sharp on
+  Retina and Windows scaling.
+
+## 6. v0.0.1 brand acceptance checklist
+
+Before calling the app "done", verify:
+
+- [ ] Window background `#0A0A0A`; no white/light surface anywhere in app chrome.
+- [ ] Exactly the palette tokens above; accent is `#1A6BFF` (never `#3B82F6`).
+- [ ] At most one `#1A6BFF` read-first element per view.
+- [ ] System font renders (SF on mac / Segoe on Windows), Arial fallback present;
+      no serif.
+- [ ] App icon = SovranaAI "S" mark, left-aligned wordmark where shown, undistorted.
+- [ ] No URL bar / browser chrome around the service.
+- [ ] Any translucency/shadow is subtle and intentional; no gradients, no glow,
+      no sentiment colors.
+- [ ] Loading + error/empty states are calm, branded, jargon-free.
+- [ ] Looks crisp on a Retina Mac and a 150%-scaled Windows display.
