@@ -1,0 +1,27 @@
+# Node (Tauri front-end)
+node_modules/
+dist/
+.vite/
+*.log
+
+# Rust / Tauri (src-tauri)
+target/
+**/target/
+Cargo.lock.orig
+
+# Tauri build output
+src-tauri/gen/
+*.app
+*.dmg
+*.exe
+*.msi
+*.AppImage
+
+# Env / secrets — per-customer endpoint config must never be committed
+.env
+.env.*
+*.local
+
+# OS
+.DS_Store
+Thumbs.db
