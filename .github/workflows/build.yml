@@ -2,42 +2,36 @@ name: build
 
 # Tauri compiles a native binary per OS, so CI fans out across OS runners.
 # Cost control (private repo, billed minutes — Linux 1x / Windows 2x / macOS 10x):
-#   - push to main  -> Linux + Windows compile-sanity only  (~24 billed min)
-#   - tag v*        -> adds the 10x macOS job + drafts a GitHub Release with the
-#                      real artifacts (.exe NSIS + .dmg). ~124 billed min.
-# Delivery targets are Windows + macOS (D35). The Linux job is an off-target
-# compile gate only (no shipped artifact); drop it if you want to save the 1x.
+#   - push / PR  -> `sanity`  : Linux + Windows compile gate    (~24 billed min)
+#   - tag v*     -> `release` : Windows + macOS bundles + Release (~120 billed min)
+# Delivery targets are Windows + macOS (D35); the Linux leg is an off-target
+# compile gate only (no shipped artifact). macOS (10x) runs ONLY on tags.
+#
+# NOTE: the macOS gate lives at JOB level keyed on github.ref — a job-level `if`
+# CANNOT read the `matrix` context, so the two cost tiers are two jobs, not one
+# matrix with a conditional row.
 
 on:
   push:
-    branches: [main]      # compile-sanity, no release
-    tags: ['v*']          # full bundles + GitHub Release
+    branches: [main]
+    tags: ['v*']
   pull_request:
-  workflow_dispatch:       # manual build button (zero auto-burn)
+  workflow_dispatch:
 
-# Kill superseded runs on rapid pushes so we never double-spend minutes.
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
-    permissions:
-      contents: write       # tauri-action needs this to create the Release
+  # Compile gate on every push/PR. No artifacts, no Release. Catches native
+  # breakage that can't surface on WSL. Skipped on tags (release covers Windows).
+  sanity:
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: windows-latest          # real artifact: NSIS .exe
-            args: ''
-          - platform: ubuntu-latest           # off-target compile gate (D35)
-            args: ''
-          - platform: macos-latest            # real artifact: .dmg (Apple Silicon)
-            args: '--target aarch64-apple-darwin'
-    # Skip the 10x macOS job unless this is a v* tag.
-    if: matrix.platform != 'macos-latest' || startsWith(github.ref, 'refs/tags/')
+        platform: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.platform }}
-
     steps:
       - uses: actions/checkout@v4
 
@@ -58,6 +52,39 @@ jobs:
           cache: npm
 
       - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - run: npm ci
+
+      # Build only — no tagName, so tauri-action ships nothing.
+      - uses: tauri-apps/tauri-action@v0
+
+  # Real artifacts. Tag-only so the 10x macOS minute never burns on a push.
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write       # tauri-action creates the GitHub Release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest          # NSIS .exe
+            args: ''
+          - platform: macos-latest            # .dmg (Apple Silicon)
+            args: '--target aarch64-apple-darwin'
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || '' }}
 
@@ -71,8 +98,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # Release only on a v* tag; a plain push builds but ships nothing.
-          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          tagName: ${{ github.ref_name }}
           releaseName: 'SovranaConnect ${{ github.ref_name }}'
           releaseDraft: true
           prerelease: false
