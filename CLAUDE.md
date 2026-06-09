@@ -116,6 +116,25 @@ Bundle output: **Windows** → `.exe` (NSIS) under
 > `webkit2gtk-4.1`/GTK dev libs (apt + sudo). That's fine — the only real targets
 > are **Windows + macOS**, so do `npm run tauri build` on one of those hosts.
 
+## CI — automated builds (`.github/workflows/build.yml`)
+
+GitHub Actions matrix (Tauri compiles per-OS). Private repo → minutes are
+billed (Linux 1× / Windows 2× / macOS 10×); default spending limit `$0` means
+Actions **stops** at the free cap, never auto-charges.
+
+- **push to `main`** → Linux + Windows compile-sanity (~24 billed min). Catches
+  native breakage that can't surface on WSL. No release.
+- **tag `v*`** → adds the 10× macOS job and drafts a **GitHub Release** with the
+  real artifacts (`.exe` NSIS + `.dmg`, Apple Silicon). ~124 billed min.
+- **manual** → `workflow_dispatch` button for zero auto-burn.
+
+The Linux job is an **off-target compile gate** (delivery targets are Windows +
+macOS per D35) — drop it to save the 1×. Signing is skipped (unsigned OK for
+v0.0.1, D35); add Authenticode/Apple-notarization secrets later.
+
+CI **builds, does not verify** — a human still runs the artifact on real OS
+against a live Open WebUI and walks the `docs/DESIGN.md` §6 brand checklist.
+
 ## Per-customer endpoint config
 
 The installed app reads `sovrana-connect.json` from the **same folder as the
