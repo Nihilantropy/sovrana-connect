@@ -1,0 +1,20 @@
+[package]
+name = "sovrana-connect"
+version = "0.0.1"
+description = "SovranaConnect — native client for SovranaAI"
+edition = "2021"
+
+[lib]
+# `_lib` suffix keeps the lib name distinct from the bin name (Windows linker, see
+# https://github.com/rust-lang/cargo/issues/8519).
+name = "sovrana_connect_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2"

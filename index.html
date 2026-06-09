@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SovranaConnect</title>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+
+  <body>
+    <!-- Splash: shown while resolving + probing the endpoint. -->
+    <main id="splash" class="screen" aria-busy="true">
+      <img class="wordmark" src="/src/assets/sovranaai-wordmark.png" alt="SovranaAI" />
+      <div class="spinner" role="status" aria-label="Connessione in corso"></div>
+    </main>
+
+    <!-- Error: endpoint unreachable. Calm, branded, one quiet retry. -->
+    <main id="error" class="screen hidden">
+      <img class="wordmark" src="/src/assets/sovranaai-wordmark.png" alt="SovranaAI" />
+      <p class="error-title">Servizio non raggiungibile</p>
+      <p class="error-endpoint" id="error-endpoint"></p>
+      <button id="retry" class="btn-accent" type="button">Riprova</button>
+    </main>
+  </body>
+</html>

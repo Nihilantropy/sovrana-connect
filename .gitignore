@@ -21,6 +21,8 @@ src-tauri/gen/
 .env
 .env.*
 *.local
+# Real per-customer endpoint override (the committed template is .example.json)
+sovrana-connect.json
 
 # OS
 .DS_Store

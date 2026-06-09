@@ -8,9 +8,22 @@ Replaces the web shell (SovranaShell). Decision: vault **D35**.
 
 ## Status
 
-**Repo initialized — docs only.** The Tauri project is not scaffolded yet; that
-is the first build session. See `CLAUDE.md` for what this is and `docs/DESIGN.md`
-for the v0.0.1 brief.
+**v0.0.1 scaffolded (2026-06-08).** Tauri v2 (vanilla-TS front + Rust shell):
+opens a configured service endpoint full-screen in a branded native window, no
+URL bar. Builds verified on WSL up to the front-end + icon pipeline; the native
+`.exe`/`.app` must be built on Windows/macOS (see `CLAUDE.md` → Build / test).
+See `docs/DESIGN.md` for the v0.0.1 brief and brand rules.
+
+## Quick start
+
+```bash
+npm install
+npm run build          # front-end (anywhere, incl. WSL)
+npm run tauri dev      # run the app (needs Windows or macOS + Rust)
+```
+
+Point it at a customer's box: copy `sovrana-connect.example.json` →
+`sovrana-connect.json` next to the executable and set `endpoint`. No rebuild.
 
 ## Why native, not a browser
 

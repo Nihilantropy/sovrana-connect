@@ -1,0 +1,137 @@
+/* SovranaConnect chrome — binding brand tokens (docs/DESIGN.md §2, accent #1A6BFF).
+   Dark only. Strict 6-token palette. System font, Arial fallback. One accent/view. */
+
+:root {
+  --bg-dark: #0a0a0a;       /* window background, outermost surface */
+  --card-dark: #141414;     /* panels, dialogs */
+  --card-border: #272727;   /* hairline borders, dividers */
+  --accent: #1a6bff;        /* THE single accent */
+  --white: #ffffff;         /* titles, primary text */
+  --gray: #6b7280;          /* secondary text, captions */
+
+  font-family: -apple-system, "SF Pro Text", "Segoe UI Variable", "Segoe UI",
+    Arial, "Helvetica Neue", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--white);
+  background-color: var(--bg-dark);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background-color: var(--bg-dark);
+}
+
+/* Centered full-window surfaces; generous whitespace, breathes on dark. */
+.screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 32px;
+  background-color: var(--bg-dark);
+  animation: fade-in 200ms ease-out;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Wordmark: undistorted (height-only scale), left edge of its own box. */
+.wordmark {
+  height: 44px;
+  width: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Loading = single centered accent spinner on near-black. */
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--card-border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+/* Error/empty = one short white line + the endpoint + one quiet action. */
+.error-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.error-endpoint {
+  margin: -16px 0 0;
+  font-size: 12px;
+  color: var(--gray);
+  word-break: break-all;
+  text-align: center;
+}
+
+.btn-accent {
+  appearance: none;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+  background-color: var(--accent);
+  cursor: pointer;
+  transition: filter 150ms ease-out, transform 150ms ease-out;
+}
+
+.btn-accent:hover {
+  filter: brightness(1.08);
+}
+
+.btn-accent:active {
+  transform: scale(0.98);
+}
+
+.btn-accent:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen {
+    animation: none;
+  }
+  .spinner {
+    animation-duration: 1600ms;
+  }
+}

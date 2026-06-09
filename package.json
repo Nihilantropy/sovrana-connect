@@ -1,0 +1,22 @@
+{
+  "name": "sovrana-connect",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "icon": "node make-icon.mjs && tauri icon src-tauri/app-icon-master.png"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "sharp": "^0.34.5",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3"
+  }
+}
