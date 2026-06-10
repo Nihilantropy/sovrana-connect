@@ -1,10 +1,13 @@
-// SovranaConnect v0.0.1 — native shell.
+// SovranaConnect v0.0.2 — native shell.
 //
-// Two jobs only (D35, docs/DESIGN.md "In scope"):
-//   1. resolve a single service endpoint (baked default, overridable per-customer
-//      by a `sovrana-connect.json` dropped next to the executable — no rebuild);
-//   2. tell the webview whether that endpoint is reachable, so the front-end can
-//      hand the whole window over to it full-screen (Open WebUI etc.).
+// Three jobs (D35 + D37, docs/DESIGN.md):
+//   1. resolve the customer's service catalog (baked default, overridable
+//      per-customer by a `sovrana-connect.json` dropped next to the executable —
+//      no rebuild; a v1 file with a bare `endpoint` still works);
+//   2. tell the webview whether an endpoint is reachable, so the launcher can
+//      show live status dots;
+//   3. open a service in its own native window (label `svc-<id>`), keeping the
+//      launcher window alive as "home" — re-opening focuses the existing window.
 //
 // Reachability is checked here, not in JS: a `fetch()` from the `tauri://` secure
 // origin to a plain-HTTP LAN endpoint would be blocked as mixed content. A raw TCP
@@ -15,26 +18,56 @@ use std::fs;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::PathBuf;
 use std::time::Duration;
+use tauri::Manager;
 
-/// Baked-in fallback. Phase-1 endpoints are plain HTTP on the LAN
-/// (e.g. `http://192.168.1.50:3000` = SovranaArchive / Open WebUI). Ship a
-/// `sovrana-connect.json` next to the binary to point at the customer's box.
-const DEFAULT_ENDPOINT: &str = "http://127.0.0.1:3000";
+/// Baked-in fallback catalog. Phase-1 endpoints are plain HTTP on the LAN
+/// (D35/D37: `:3000` = SovranaArchive / Open WebUI, `:8501` = SovranaMail /
+/// Streamlit). Ship a `sovrana-connect.json` next to the binary to point at the
+/// customer's box.
 const DEFAULT_TITLE: &str = "SovranaConnect";
+
+fn default_services() -> Vec<Service> {
+    vec![
+        Service {
+            id: "archive".into(),
+            name: "SovranaArchive".into(),
+            endpoint: "http://127.0.0.1:3000".into(),
+            description: Some("Archivio intelligente".into()),
+        },
+        Service {
+            id: "mail".into(),
+            name: "SovranaMail".into(),
+            endpoint: "http://127.0.0.1:8501".into(),
+            description: Some("Email intelligenti".into()),
+        },
+    ]
+}
+
+/// One entry of the customer's suite catalog.
+#[derive(Serialize, Deserialize, Clone)]
+struct Service {
+    id: String,
+    name: String,
+    endpoint: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    description: Option<String>,
+}
 
 /// Config handed to the front-end.
 #[derive(Serialize, Clone)]
 struct Config {
-    endpoint: String,
     title: String,
+    services: Vec<Service>,
 }
 
 /// Shape of the optional on-disk override file. Every field optional so a partial
-/// file still merges cleanly over the baked defaults.
+/// file still merges cleanly over the baked defaults. `endpoint` is the v1 single-
+/// service form, kept for backward compatibility; `services` (v2) wins if present.
 #[derive(Deserialize, Default)]
 struct FileConfig {
     endpoint: Option<String>,
     title: Option<String>,
+    services: Option<Vec<Service>>,
 }
 
 /// `<dir-of-executable>/sovrana-connect.json`.
@@ -45,20 +78,38 @@ fn config_path() -> Option<PathBuf> {
 
 fn load_config() -> Config {
     let mut cfg = Config {
-        endpoint: DEFAULT_ENDPOINT.to_string(),
         title: DEFAULT_TITLE.to_string(),
+        services: default_services(),
     };
     if let Some(path) = config_path() {
         if let Ok(text) = fs::read_to_string(&path) {
             if let Ok(fc) = serde_json::from_str::<FileConfig>(&text) {
-                if let Some(e) = fc.endpoint {
-                    if !e.trim().is_empty() {
-                        cfg.endpoint = e.trim().to_string();
-                    }
-                }
                 if let Some(t) = fc.title {
                     if !t.trim().is_empty() {
                         cfg.title = t.trim().to_string();
+                    }
+                }
+                if let Some(services) = fc.services {
+                    let services: Vec<Service> = services
+                        .into_iter()
+                        .filter(|s| {
+                            !s.id.trim().is_empty()
+                                && !s.name.trim().is_empty()
+                                && !s.endpoint.trim().is_empty()
+                        })
+                        .collect();
+                    if !services.is_empty() {
+                        cfg.services = services;
+                    }
+                } else if let Some(e) = fc.endpoint {
+                    // v1 file: one bare endpoint = a single-service catalog.
+                    if !e.trim().is_empty() {
+                        cfg.services = vec![Service {
+                            id: "service".into(),
+                            name: cfg.title.clone(),
+                            endpoint: e.trim().to_string(),
+                            description: None,
+                        }];
                     }
                 }
             }
@@ -96,10 +147,54 @@ fn check_endpoint(url: String) -> bool {
     }
 }
 
+/// Window labels only allow `a-zA-Z0-9-/:_`; config `id` is customer-editable.
+fn window_label(id: &str) -> String {
+    let safe: String = id
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '-' })
+        .collect();
+    format!("svc-{safe}")
+}
+
+/// Open service `id` from the resolved config in its own maximized native window.
+/// The endpoint is resolved here (not passed from JS) so the webview can never
+/// point a service window at an arbitrary URL. If the window already exists it is
+/// focused instead — the launcher stays the single home.
+#[tauri::command]
+fn open_service(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    let cfg = load_config();
+    let service = cfg
+        .services
+        .iter()
+        .find(|s| s.id == id)
+        .ok_or_else(|| format!("unknown service id: {id}"))?;
+
+    let label = window_label(&service.id);
+    if let Some(existing) = app.get_webview_window(&label) {
+        let _ = existing.unminimize();
+        let _ = existing.set_focus();
+        return Ok(());
+    }
+
+    let url: tauri::Url = service.endpoint.parse().map_err(|_| {
+        format!("invalid endpoint for service {id}: {}", service.endpoint)
+    })?;
+
+    tauri::WebviewWindowBuilder::new(&app, &label, tauri::WebviewUrl::External(url))
+        .title(&service.name)
+        .inner_size(1280.0, 832.0)
+        .min_inner_size(900.0, 600.0)
+        .maximized(true)
+        .theme(Some(tauri::Theme::Dark))
+        .build()
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_config, check_endpoint])
+        .invoke_handler(tauri::generate_handler![get_config, check_endpoint, open_service])
         .run(tauri::generate_context!())
         .expect("error while running SovranaConnect");
 }

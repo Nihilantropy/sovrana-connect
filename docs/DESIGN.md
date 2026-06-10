@@ -69,6 +69,49 @@ The smallest thing that replaces "open a browser, type an IP:port, log in" with
 
 ---
 
+# v0.0.2 — multi-service launcher (vault D37)
+
+Source: vault **D37** (2026-06-10). The SovranaSuite (SovranaMail + SovranaArchive
++ future Sovrana tools) ships standard with every partner contract (refines D36),
+so the client surface must present N services, not one. The modules stay the
+existing open-source web UIs (Open WebUI, Streamlit) — SovranaConnect frames
+them, it does not replace them.
+
+## In scope (v0.0.2)
+
+1. **Config schema v2.** `sovrana-connect.json` gains a `services` array
+   (`id`, `name`, `endpoint`, optional `description`). Adding a Sovrana tool to a
+   customer = adding one object to the array — no rebuild, no new binary.
+   Backward compatible: a v1 file with a bare `endpoint` still works (becomes a
+   single-service config).
+2. **Launcher home** (main window): branded header + one tile per service with a
+   live status dot (TCP probe, re-checked periodically and on window focus).
+   Click a reachable tile → the service opens. Unreachable tile says so calmly.
+3. **Window-per-service navigation.** Each service opens in its own native
+   window (label `svc-<id>`, maximized, dark). The launcher window stays alive —
+   "back to home" is just the launcher window, no in-page chrome over the
+   service. Re-clicking a tile focuses the existing window. This deliberately
+   avoids (a) iframes — the D33/D34 pain, and (b) the one-way
+   `location.replace` of v0.0.1, and it lets Mail + Archive run side-by-side.
+4. **Single-service fast path.** If the resolved config has exactly one service,
+   skip the launcher and behave exactly like v0.0.1 (probe → full-screen in the
+   main window).
+
+## Out of scope (unchanged from v0.0.1 list)
+
+Endpoint discovery (mDNS/MagicDNS), settings UI, identity unification,
+notifications, auto-update, signing, tunnel management. Cert-pinning/HTTPS
+transport stays the v0.0.3+ track (D35 Phase-2).
+
+## Brand deviation (tracked)
+
+The per-tile status dot uses the `#1A6BFF` accent on potentially several tiles
+at once — a point exception to the one-accent-per-view rule (§2 below), accepted
+in D37 because the dots are 8px signals, not actions; the read-first element of
+the launcher remains the tile grid itself.
+
+---
+
 # Brand & UI/UX guidelines (MUST follow)
 
 These are binding for any pixel SovranaConnect renders — the app's own chrome

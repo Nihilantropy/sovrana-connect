@@ -1,5 +1,18 @@
 {
-  "_comment": "Per-customer endpoint override. Copy to 'sovrana-connect.json' and place NEXT TO the installed SovranaConnect executable (same folder). No rebuild needed. If absent, the app uses its baked default. Phase 1 = plain HTTP on the LAN.",
-  "endpoint": "http://192.168.1.50:3000",
-  "title": "SovranaConnect"
+  "_comment": "Per-customer suite catalog. Copy to 'sovrana-connect.json' and place NEXT TO the installed SovranaConnect executable (same folder). No rebuild needed. Adding a Sovrana tool = adding one object to 'services'. If the file is absent the app uses its baked defaults. With exactly one service the app skips the launcher and opens it full-screen. A v1 file with a bare 'endpoint' field still works. Phase 1 = plain HTTP on the LAN.",
+  "title": "SovranaConnect",
+  "services": [
+    {
+      "id": "archive",
+      "name": "SovranaArchive",
+      "endpoint": "http://192.168.1.50:3000",
+      "description": "Archivio intelligente"
+    },
+    {
+      "id": "mail",
+      "name": "SovranaMail",
+      "endpoint": "http://192.168.1.50:8501",
+      "description": "Email intelligenti"
+    }
+  ]
 }

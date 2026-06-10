@@ -9,13 +9,22 @@
   </head>
 
   <body>
-    <!-- Splash: shown while resolving + probing the endpoint. -->
+    <!-- Splash: shown while resolving the config + first probe. -->
     <main id="splash" class="screen" aria-busy="true">
       <img class="wordmark" src="/src/assets/sovranaai-wordmark.png" alt="SovranaAI" />
       <div class="spinner" role="status" aria-label="Connessione in corso"></div>
     </main>
 
-    <!-- Error: endpoint unreachable. Calm, branded, one quiet retry. -->
+    <!-- Launcher: one tile per suite service (D37). Built by main.ts. -->
+    <main id="launcher" class="screen launcher hidden">
+      <header class="launcher-header">
+        <img class="wordmark wordmark-small" src="/src/assets/sovranaai-wordmark.png" alt="SovranaAI" />
+        <p class="launcher-subtitle" id="launcher-subtitle">I tuoi servizi</p>
+      </header>
+      <div class="tiles" id="tiles"></div>
+    </main>
+
+    <!-- Error: single-service config and that endpoint is unreachable. -->
     <main id="error" class="screen hidden">
       <img class="wordmark" src="/src/assets/sovranaai-wordmark.png" alt="SovranaAI" />
       <p class="error-title">Servizio non raggiungibile</p>

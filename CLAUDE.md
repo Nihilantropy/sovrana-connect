@@ -30,15 +30,27 @@ with the Tailscale/Headscale tunnel off. The browser-on-LAN path
 (`http://<server-ip>:<port>`, Phase 1) stays as a zero-install fallback. Don't
 build anything that makes the app the only way in.
 
-## Scope — v0.0.1 (minimal, zero overhead)
+## Scope — v0.0.2 (multi-service launcher, D37)
 
-Deliberately tiny. v0.0.1 just:
-1. Stores/discovers a service endpoint.
-2. Opens it full-screen (webview over the existing service UI, e.g. Open WebUI).
-3. Trusts the connection without a public cert (cert pinning or HTTP-over-WG).
+The SovranaSuite (Mail + Archive + future Sovrana tools) ships standard with
+every partner contract (vault **D37**, 2026-06-10, refines D36), so the app
+presents the customer's whole catalog:
 
-NOT in v0.0.1: SSO/identity unification, multi-service launcher drawer, auto
-endpoint discovery beyond a saved config, notifications, auto-update. Add later.
+1. Resolves a per-customer **service catalog** (`services[]` in the config file;
+   adding a tool = adding one JSON object, no rebuild).
+2. **Launcher home**: branded tile per service + live status dot (TCP probe,
+   re-checked every 20s and on window focus).
+3. Click → the service opens in its **own native window** (label `svc-<id>`,
+   maximized, dark; re-click = focus). The launcher window stays alive as home —
+   no iframes (D33/D34 pain), no one-way `location.replace` trap, Mail + Archive
+   can run side-by-side.
+4. **Single-service fast path**: exactly one service in config → skip the
+   launcher, v0.0.1 behavior (probe → full-screen in the main window).
+5. Trusts the connection without a public cert (plain HTTP on LAN, Phase 1).
+
+Still NOT in scope: SSO/identity unification, endpoint discovery beyond the
+config file (mDNS/MagicDNS), HTTPS/cert-pinning transport, notifications,
+auto-update. Those are v0.0.3+ (D35 Phase-2).
 
 ## Distribution (D35)
 
@@ -51,26 +63,37 @@ endpoint discovery beyond a saved config, notifications, auto-update. Add later.
   Authenticode are later polish. Auto-update (Tauri updater → private repo) is
   post-v0.0.1.
 
-## Stack (scaffolded — v0.0.1)
+## Stack (v0.0.2)
 
 Tauri v2 (vanilla-TS front + Rust shell) — the lightest cross-platform path that
-gives native packaging, a webview, and cert control. Scaffolded 2026-06-08.
+gives native packaging, a webview, and cert control. Scaffolded 2026-06-08;
+launcher added 2026-06-10 (D37).
 
-Architecture (deliberately tiny — see `docs/DESIGN.md` "In scope"):
+Architecture (deliberately tiny — see `docs/DESIGN.md`):
 
-- **Rust shell** (`src-tauri/src/lib.rs`) exposes two commands:
-  - `get_config()` → resolves the service endpoint. Baked default
-    (`DEFAULT_ENDPOINT`), overridable per-customer by a `sovrana-connect.json`
-    dropped **next to the executable** (no rebuild). Template:
-    `sovrana-connect.example.json`.
+- **Rust shell** (`src-tauri/src/lib.rs`) exposes three commands:
+  - `get_config()` → resolves the **service catalog** (`{title, services[]}`).
+    Baked defaults (Archive `:3000` + Mail `:8501` on localhost), overridable
+    per-customer by a `sovrana-connect.json` dropped **next to the executable**
+    (no rebuild). v1 files with a bare `endpoint` still parse (single-service).
+    Template: `sovrana-connect.example.json`.
   - `check_endpoint(url)` → raw **TCP connect** with a 2.5s timeout. Reachability
     is decided in Rust, not JS, because a `fetch()` from the `tauri://` secure
     origin to a plain-HTTP LAN endpoint would be blocked as mixed content.
-- **Front-end** (`index.html` + `src/main.ts`) = branded splash → probe → on
-  success `window.location.replace(endpoint)` (top-level nav to `http://` is
-  allowed; the whole window becomes the service UI, no URL bar) → on failure a
-  calm branded error with one **Riprova** action. All chrome follows the brand
-  tokens in `src/styles.css` (dark `#0A0A0A`, accent `#1A6BFF`).
+  - `open_service(id)` → opens that service in its own maximized native window
+    (label `svc-<id>`, dark theme); focuses the existing window if already open.
+    The endpoint is resolved in Rust from the config — the webview can never
+    point a service window at an arbitrary URL.
+- **Front-end** (`index.html` + `src/main.ts`):
+  - **N services** → branded launcher: tile per service (name, description,
+    status dot), probes every 20s + on focus, click → `open_service`.
+  - **1 service** → v0.0.1 flow: splash → probe → on success
+    `window.location.replace(endpoint)` (top-level nav to `http://` is allowed;
+    the whole window becomes the service UI, no URL bar) → on failure a calm
+    branded error with one **Riprova** action.
+  - All chrome follows the brand tokens in `src/styles.css` (dark `#0A0A0A`,
+    accent `#1A6BFF`). Tracked deviation: status dots may show the accent on
+    several tiles at once (see `docs/DESIGN.md` v0.0.2 §Brand deviation).
 - **Window** (`src-tauri/tauri.conf.json`): maximized, dark, native decorations,
   `backgroundColor #0A0A0A` to avoid a white launch flash. Identifier
   `com.sovranaai.connect`.
@@ -135,14 +158,16 @@ v0.0.1, D35); add Authenticode/Apple-notarization secrets later.
 CI **builds, does not verify** — a human still runs the artifact on real OS
 against a live Open WebUI and walks the `docs/DESIGN.md` §6 brand checklist.
 
-## Per-customer endpoint config
+## Per-customer suite config
 
 The installed app reads `sovrana-connect.json` from the **same folder as the
 executable**. To point a customer at their box, copy `sovrana-connect.example.json`
-to `sovrana-connect.json` and set `endpoint` (e.g. `http://192.168.1.50:3000`).
-No rebuild. If the file is absent the app falls back to its baked default. The
-real per-customer file is git-ignored; only the `.example.json` template is
-committed.
+to `sovrana-connect.json` and fill `services[]` — one object per suite module
+(`id`, `name`, `endpoint`, optional `description`). **Adding a Sovrana tool =
+adding one object. No rebuild.** Exactly one service → the app skips the
+launcher and opens it full-screen. A v1 file with a bare `endpoint` field still
+works. If the file is absent the app falls back to its baked defaults. The real
+per-customer file is git-ignored; only the `.example.json` template is committed.
 
 ## Brand & UI/UX (binding)
 
@@ -156,9 +181,10 @@ the deck's "flat" rule with the Aqua aesthetic. Brand authority: vault
 
 ## Source of truth
 
-- Decisions: vault **D35** (native pivot, 2-phase deploy) + **D16** (original
-  SovranaConnect intent) + **D22** (SovranaLocal offline-first) + **D32** (brand
-  accent `#1A6BFF`).
+- Decisions: vault **D35** (native pivot, 2-phase deploy) + **D37** (SovranaSuite
+  standard + multi-service launcher) + **D36** (Connect = unifying surface) +
+  **D16** (original SovranaConnect intent) + **D22** (SovranaLocal offline-first)
+  + **D32** (brand accent `#1A6BFF`).
 - Phase-1 LAN access (the fallback this app sits on top of):
   `sovrana-ai-stack/doc/routing.md` → "Phase 1 — LAN access".
 - Connectivity model (Tailscale + self-hosted Headscale EU):

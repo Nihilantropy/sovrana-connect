@@ -112,6 +112,115 @@ body {
   outline-offset: 3px;
 }
 
+/* --- Launcher (v0.0.2, D37): branded home, one tile per suite service. ------ */
+
+.launcher {
+  justify-content: flex-start;
+  padding: 64px 48px;
+  gap: 48px;
+  overflow-y: auto;
+}
+
+.launcher-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* brand rule: wordmark left-aligned, never centered */
+  gap: 8px;
+  width: 100%;
+  max-width: 960px;
+}
+
+.wordmark-small {
+  height: 32px;
+}
+
+.launcher-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  width: 100%;
+  max-width: 960px;
+}
+
+.tile {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 24px;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background-color: var(--card-dark);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease-out, transform 150ms ease-out;
+}
+
+.tile:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.tile:active {
+  transform: scale(0.99);
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.tile.busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.tile-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.2;
+}
+
+.tile-desc {
+  font-size: 12px;
+  color: var(--gray);
+  min-height: 1.6em;
+}
+
+.tile-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Status dot: #1A6BFF when online — tracked one-accent deviation (DESIGN.md). */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--gray);
+  transition: background-color 200ms ease-out;
+}
+
+.tile.online .dot {
+  background-color: var(--accent);
+}
+
+.status-label {
+  font-size: 11px;
+  color: var(--gray);
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

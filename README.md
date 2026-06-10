@@ -8,11 +8,13 @@ Replaces the web shell (SovranaShell). Decision: vault **D35**.
 
 ## Status
 
-**v0.0.1 scaffolded (2026-06-08).** Tauri v2 (vanilla-TS front + Rust shell):
-opens a configured service endpoint full-screen in a branded native window, no
-URL bar. Builds verified on WSL up to the front-end + icon pipeline; the native
-`.exe`/`.app` must be built on Windows/macOS (see `CLAUDE.md` → Build / test).
-See `docs/DESIGN.md` for the v0.0.1 brief and brand rules.
+**v0.0.2 in progress (2026-06-10).** Multi-service launcher (vault D37): the
+SovranaSuite ships standard with every partner contract, so the app shows a
+branded tile per service (live status dot) and opens each one in its own native
+window. One service in config → launcher is skipped (v0.0.1 full-screen flow).
+v0.0.1 was released 2026-06-09 (Windows-verified). Front-end verified on WSL;
+native `.exe`/`.app` built by CI or on Windows/macOS (see `CLAUDE.md` → Build /
+test). See `docs/DESIGN.md` for the briefs and brand rules.
 
 ## Quick start
 
@@ -23,7 +25,8 @@ npm run tauri dev      # run the app (needs Windows or macOS + Rust)
 ```
 
 Point it at a customer's box: copy `sovrana-connect.example.json` →
-`sovrana-connect.json` next to the executable and set `endpoint`. No rebuild.
+`sovrana-connect.json` next to the executable and fill `services[]` (one object
+per suite module). Adding a tool = adding one object. No rebuild.
 
 ## Why native, not a browser
 
