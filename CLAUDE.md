@@ -138,6 +138,13 @@ Bundle output: **Windows** → `.exe` (NSIS) under
 > (`cargo generate-lockfile`). The **Rust app cannot compile on WSL** without
 > `webkit2gtk-4.1`/GTK dev libs (apt + sudo). That's fine — the only real targets
 > are **Windows + macOS**, so do `npm run tauri build` on one of those hosts.
+>
+> The Windows host of this dev machine has the full toolchain (nvm-windows +
+> MSVC Build Tools + rustup); `npm run tauri dev` in a Windows clone is the
+> native verify loop — use it BEFORE tagging. WSL/webkit2gtk does not reproduce
+> Windows-only webview bugs (e.g. the wry#583 sync-command deadlock fixed in
+> v0.0.2). Dev server port is **14200** (not Tauri's 1420 — unbindable on this
+> Windows host).
 
 ## CI — automated builds (`.github/workflows/build.yml`)
 
@@ -157,6 +164,11 @@ v0.0.1, D35); add Authenticode/Apple-notarization secrets later.
 
 CI **builds, does not verify** — a human still runs the artifact on real OS
 against a live Open WebUI and walks the `docs/DESIGN.md` §6 brand checklist.
+
+CI gotcha: if a `release` job fails mid-run, **delete the draft Release before
+rerunning** — tauri-action dies silently (no error in the log) when it finds a
+draft left over from a previous attempt. `gh run rerun --failed` against an
+existing draft fails every time; delete the draft, then rerun all jobs.
 
 ## Per-customer suite config
 
