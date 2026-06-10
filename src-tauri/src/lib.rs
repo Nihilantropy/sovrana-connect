@@ -125,8 +125,10 @@ fn get_config() -> Config {
 
 /// TCP-connect to host:port from the URL with a short timeout. `true` = reachable.
 /// No TLS handshake, no HTTP request — pure "is something listening".
+/// `async` so the blocking connect (up to 2.5s on a dead endpoint) runs off the
+/// main thread — sync commands run on the main thread and would freeze the UI.
 #[tauri::command]
-fn check_endpoint(url: String) -> bool {
+async fn check_endpoint(url: String) -> bool {
     let parsed = match url::Url::parse(&url) {
         Ok(u) => u,
         Err(_) => return false,
@@ -160,8 +162,11 @@ fn window_label(id: &str) -> String {
 /// The endpoint is resolved here (not passed from JS) so the webview can never
 /// point a service window at an arbitrary URL. If the window already exists it is
 /// focused instead — the launcher stays the single home.
+/// MUST be `async`: on Windows, creating a webview window from a sync command
+/// deadlocks (wry#583) — the event loop can't pump WebView2 creation messages
+/// while the main thread is blocked in the command. Blank window + frozen app.
 #[tauri::command]
-fn open_service(app: tauri::AppHandle, id: String) -> Result<(), String> {
+async fn open_service(app: tauri::AppHandle, id: String) -> Result<(), String> {
     let cfg = load_config();
     let service = cfg
         .services
