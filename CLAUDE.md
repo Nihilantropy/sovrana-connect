@@ -73,7 +73,7 @@ Architecture (deliberately tiny — see `docs/DESIGN.md`):
 
 - **Rust shell** (`src-tauri/src/lib.rs`) exposes three commands:
   - `get_config()` → resolves the **service catalog** (`{title, services[]}`).
-    Baked defaults (Archive `:3000` + Mail `:8501` on localhost), overridable
+    Baked defaults (Archive `:3000`, Mail `:8501`, Brain `:8600` on localhost), overridable
     per-customer by a `sovrana-connect.json` dropped **next to the executable**
     (no rebuild). v1 files with a bare `endpoint` still parse (single-service).
     Template: `sovrana-connect.example.json`.

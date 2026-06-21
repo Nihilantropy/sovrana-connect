@@ -13,6 +13,12 @@
       "name": "SovranaMail",
       "endpoint": "http://192.168.1.50:8501",
       "description": "Email intelligenti"
+    },
+    {
+      "id": "brain",
+      "name": "SovranaBrain",
+      "endpoint": "http://192.168.1.50:8600",
+      "description": "Mappa della conoscenza"
     }
   ]
 }
