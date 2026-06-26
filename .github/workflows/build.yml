@@ -59,8 +59,12 @@ jobs:
 
       - run: npm ci
 
-      # Build only — no tagName, so tauri-action ships nothing.
+      # Compile gate only. --no-bundle skips installers AND updater-artifact
+      # signing (createUpdaterArtifacts is on), so this job needs no signing key.
+      # Signing lives in the `release` job below.
       - uses: tauri-apps/tauri-action@v0
+        with:
+          args: '--no-bundle'
 
   # Real artifacts. Tag-only so the 10x macOS minute never burns on a push.
   release:
