@@ -31,5 +31,40 @@
       <p class="error-endpoint" id="error-endpoint"></p>
       <button id="retry" class="btn-accent" type="button">Riprova</button>
     </main>
+
+    <!-- Update notice: shown when a newer release exists and auto-update is OFF,
+         or as progress while auto-update installs. Toggled by main.ts. -->
+    <main id="update" class="screen hidden">
+      <img class="wordmark" src="/src/assets/sovranaai-wordmark.png" alt="SovranaAI" />
+      <p class="update-title" id="update-title">Nuova versione disponibile</p>
+      <p class="update-version" id="update-version"></p>
+      <div class="update-actions" id="update-actions">
+        <button id="update-now" class="btn-accent" type="button">Aggiorna ora</button>
+        <button id="update-later" class="btn-ghost" type="button">Più tardi</button>
+      </div>
+      <div class="spinner hidden" id="update-spinner" role="status" aria-label="Aggiornamento in corso"></div>
+    </main>
+
+    <!-- Settings: reachable from the global gear. v0.0.3 = one toggle. -->
+    <main id="settings" class="screen hidden">
+      <img class="wordmark" src="/src/assets/sovranaai-wordmark.png" alt="SovranaAI" />
+      <div class="settings-panel">
+        <label class="settings-row" for="toggle-auto-update">
+          <span class="settings-label">Aggiornamenti automatici</span>
+          <input id="toggle-auto-update" class="toggle" type="checkbox" />
+        </label>
+        <p class="settings-hint">Quando attivo, SovranaConnect installa i nuovi aggiornamenti all'avvio.</p>
+      </div>
+      <button id="settings-back" class="btn-ghost" type="button">Indietro</button>
+    </main>
+
+    <!-- Global gear: present on every SovranaConnect chrome screen. The document
+         is replaced on single-service redirect, so it never overlays a service. -->
+    <button id="gear" class="gear" type="button" aria-label="Impostazioni" title="Impostazioni">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M19.4 13a7.6 7.6 0 0 0 .06-2l1.7-1.32-1.7-2.94-2.05.82a7.6 7.6 0 0 0-1.74-1l-.31-2.16h-3.4l-.31 2.16a7.6 7.6 0 0 0-1.74 1l-2.05-.82-1.7 2.94L5.54 11a7.6 7.6 0 0 0 0 2l-1.7 1.32 1.7 2.94 2.05-.82c.53.42 1.12.76 1.74 1l.31 2.16h3.4l.31-2.16c.62-.24 1.21-.58 1.74-1l2.05.82 1.7-2.94L19.4 13Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </body>
 </html>

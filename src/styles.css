@@ -244,3 +244,120 @@ body {
     animation-duration: 1600ms;
   }
 }
+
+/* --- Settings + update (v0.0.3) --------------------------------------------- */
+
+/* Global settings gear — fixed top-right, neutral chrome (not an accent action,
+   so the one-accent-per-view rule holds). */
+.gear {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background-color: var(--card-dark);
+  color: var(--gray);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.gear:hover {
+  color: var(--white);
+  border-color: var(--gray);
+}
+
+/* Settings panel */
+.settings-panel {
+  width: 100%;
+  max-width: 420px;
+  background-color: var(--card-dark);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 24px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+}
+.settings-label {
+  font-size: 15px;
+  color: var(--white);
+}
+.settings-hint {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--gray);
+}
+
+/* Toggle: accent when on, neutral when off. */
+.toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 44px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background-color: var(--card-border);
+  position: relative;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: var(--white);
+  transition: transform 150ms ease;
+}
+.toggle:checked {
+  background-color: var(--accent);
+}
+.toggle:checked::after {
+  transform: translateX(18px);
+}
+
+/* Update screen */
+.update-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--white);
+  margin: 0;
+}
+.update-version {
+  font-size: 14px;
+  color: var(--gray);
+  margin: 0;
+}
+.update-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Ghost button: neutral secondary action (keeps single accent per view). */
+.btn-ghost {
+  appearance: none;
+  border: 1px solid var(--card-border);
+  background-color: transparent;
+  color: var(--white);
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 150ms ease;
+}
+.btn-ghost:hover {
+  border-color: var(--gray);
+}
