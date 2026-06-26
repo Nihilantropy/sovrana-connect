@@ -8,6 +8,15 @@ Replaces the web shell (SovranaShell). Decision: vault **D35**.
 
 ## Status
 
+**v0.0.3 — auto-update (2026-06-26, vault D53).** New **Settings tab** (one
+toggle, **Aggiornamenti automatici**, default ON) reached by a global gear icon.
+On launch the app checks for a newer signed release (non-blocking, fail-silent
+offline): toggle ON installs + relaunches; toggle OFF shows a "Nuova versione
+disponibile" notice with an **Aggiorna ora** button. Channel = the repo's
+**public** GitHub Releases (minisign-signed, interim; EU-host migration tracked).
+Operator must generate the keypair, set repo secrets, and flip the repo public —
+runbook in `docs/RELEASE.md`. macOS update path still unverified (no Mac).
+
 **v0.0.2 RELEASED (2026-06-10, Windows-verified).** Multi-service launcher
 (vault D37): the SovranaSuite ships standard with every partner contract, so
 the app shows a branded tile per service (live status dot) and opens each one

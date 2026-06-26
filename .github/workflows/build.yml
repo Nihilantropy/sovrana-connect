@@ -97,6 +97,11 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Updater artifact signing (D53). Secrets set by the operator:
+          #   gh secret set TAURI_SIGNING_PRIVATE_KEY < ~/.sovrana/connect-updater.key
+          #   gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'SovranaConnect ${{ github.ref_name }}'
