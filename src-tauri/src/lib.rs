@@ -97,7 +97,10 @@ fn parse_settings(text: &str) -> Settings {
 
 /// `<app-config-dir>/settings.json`.
 fn settings_path(app: &tauri::AppHandle) -> Option<PathBuf> {
-    app.path().app_config_dir().ok().map(|d| d.join("settings.json"))
+    app.path()
+        .app_config_dir()
+        .ok()
+        .map(|d| d.join("settings.json"))
 }
 
 fn load_settings(app: &tauri::AppHandle) -> Settings {
@@ -171,8 +174,10 @@ fn set_auto_update(app: tauri::AppHandle, enabled: bool) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    let text = serde_json::to_string_pretty(&Settings { auto_update: enabled })
-        .map_err(|e| e.to_string())?;
+    let text = serde_json::to_string_pretty(&Settings {
+        auto_update: enabled,
+    })
+    .map_err(|e| e.to_string())?;
     fs::write(&path, text).map_err(|e| e.to_string())
 }
 
@@ -206,7 +211,13 @@ async fn check_endpoint(url: String) -> bool {
 fn window_label(id: &str) -> String {
     let safe: String = id
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '-' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '-'
+            }
+        })
         .collect();
     format!("svc-{safe}")
 }
@@ -234,9 +245,10 @@ async fn open_service(app: tauri::AppHandle, id: String) -> Result<(), String> {
         return Ok(());
     }
 
-    let url: tauri::Url = service.endpoint.parse().map_err(|_| {
-        format!("invalid endpoint for service {id}: {}", service.endpoint)
-    })?;
+    let url: tauri::Url = service
+        .endpoint
+        .parse()
+        .map_err(|_| format!("invalid endpoint for service {id}: {}", service.endpoint))?;
 
     tauri::WebviewWindowBuilder::new(&app, &label, tauri::WebviewUrl::External(url))
         .title(&service.name)
