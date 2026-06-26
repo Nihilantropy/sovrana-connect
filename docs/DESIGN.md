@@ -33,7 +33,8 @@ The smallest thing that replaces "open a browser, type an IP:port, log in" with
 - Endpoint **discovery** (mDNS on LAN, tailnet MagicDNS) — v0.0.1 uses a saved
   endpoint; discovery is the obvious v0.0.2.
 - Identity unification / single logout (the old D33 v0.0.2 "identity" goal).
-- OS notifications, auto-update, code signing / notarization.
+- OS notifications, code signing / notarization. (**Auto-update shipped in
+  v0.0.3, D53** — see §Auto-update + Settings below.)
 - Tunnel management (bringing the WireGuard/Tailscale link up from inside the app).
 
 ## Constraints (do not violate)
@@ -99,9 +100,31 @@ them, it does not replace them.
 
 ## Out of scope (unchanged from v0.0.1 list)
 
-Endpoint discovery (mDNS/MagicDNS), settings UI, identity unification,
-notifications, auto-update, signing, tunnel management. Cert-pinning/HTTPS
-transport stays the v0.0.3+ track (D35 Phase-2).
+Endpoint discovery (mDNS/MagicDNS), identity unification, notifications,
+tunnel management. Cert-pinning/HTTPS transport stays the Phase-2 track (D35).
+(**Settings UI + auto-update + signing shipped in v0.0.3, D53** — below.)
+
+## Auto-update + Settings (v0.0.3, D53)
+
+A **Settings** screen reachable via a global gear icon (fixed top-right, neutral
+`--gray` chrome → `--white` on hover; present on splash, launcher, error, and the
+update screen — it lives in `<body>` and is destroyed when single-service mode
+replaces the document on redirect, so it never overlays a service). The screen
+holds one row: **Aggiornamenti automatici** toggle (accent `--accent` when on),
+default ON, persisted by the Rust commands `get_settings` / `set_auto_update` in
+`<app-config-dir>/settings.json`.
+
+Update flow (`tauri-plugin-updater`): a startup `check()`, time-boxed
+(`UPDATE_CHECK_TIMEOUT_MS`, 3s) and fail-silent (offline = nothing surfaces,
+D35 invariant). Toggle **ON** → `#update` progress mode → `downloadAndInstall()`
+→ relaunch. Toggle **OFF** → `#update` notice mode: title "Nuova versione
+disponibile", version line, **Aggiorna ora** (accent) + **Più tardi** (ghost). The
+notice uses one accent only — the ghost button is a neutral `--card-border`
+outline, so the one-accent rule holds.
+
+Signed channel + publish gate: minisign-signed artifacts on the repo's public
+GitHub Releases; humans publish the (verified) draft before clients see it. See
+`docs/RELEASE.md`.
 
 ## Brand deviation (tracked)
 

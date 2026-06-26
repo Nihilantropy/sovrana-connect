@@ -49,8 +49,23 @@ presents the customer's whole catalog:
 5. Trusts the connection without a public cert (plain HTTP on LAN, Phase 1).
 
 Still NOT in scope: SSO/identity unification, endpoint discovery beyond the
-config file (mDNS/MagicDNS), HTTPS/cert-pinning transport, notifications,
-auto-update. Those are v0.0.3+ (D35 Phase-2).
+config file (mDNS/MagicDNS), HTTPS/cert-pinning transport, notifications. Those
+are later Phase-2 (D35). **Auto-update landed in v0.0.3** (D53) — see below.
+
+## Settings + auto-update (v0.0.3, D53)
+
+A new **Settings tab** (one toggle, **Aggiornamenti automatici**, default ON),
+reached by a global gear icon present on every chrome screen (splash, launcher,
+error, update). The preference persists in `<app-config-dir>/settings.json` (two
+Rust commands `get_settings` / `set_auto_update`), separate from the operator's
+`sovrana-connect.json`.
+
+`tauri-plugin-updater` + `tauri-plugin-process` run a startup `check()`
+(non-blocking, fail-silent offline — D35 invariant; bounded by
+`UPDATE_CHECK_TIMEOUT_MS`, 3s). Toggle ON → `downloadAndInstall()` + relaunch.
+Toggle OFF → branded "Nuova versione disponibile" screen with an **Aggiorna ora**
+button. Multi-service adds zero latency (launcher renders first, check runs in
+background); single-service races the check before the redirect.
 
 ## Distribution (D35)
 
@@ -60,8 +75,13 @@ auto-update. Those are v0.0.3+ (D35 Phase-2).
   Windows**.
 - Code signing is **optional for v0.0.1** (first-run Gatekeeper / SmartScreen
   warning is acceptable for a managed-delivery product). Notarization +
-  Authenticode are later polish. Auto-update (Tauri updater → private repo) is
-  post-v0.0.1.
+  Authenticode are later polish. **Auto-update shipped in v0.0.3** (D53) via
+  `tauri-plugin-updater`: minisign-signed artifacts + `latest.json` on the repo's
+  **public** GitHub Releases (interim channel; endpoint is one line in
+  `tauri.conf.json` → EU-host migration tracked). The minisign signing is
+  distribution integrity only, distinct from Authenticode/notarization (still
+  deferred). Publish gate stays human (CI drafts → operator verifies on Windows →
+  publishes; drafts are not served). Runbook: `docs/RELEASE.md`.
 
 ## Stack (v0.0.2)
 
