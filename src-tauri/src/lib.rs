@@ -70,6 +70,43 @@ struct FileConfig {
     services: Option<Vec<Service>>,
 }
 
+/// User-editable preference, distinct from the operator's `sovrana-connect.json`
+/// (which is the service catalog). Stored in the OS app-config dir: survives an
+/// NSIS reinstall, writable without elevation. Absent/garbage => default ON.
+#[derive(Serialize, Deserialize)]
+struct Settings {
+    #[serde(default = "default_auto_update")]
+    auto_update: bool,
+}
+
+fn default_auto_update() -> bool {
+    true
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Settings { auto_update: true }
+    }
+}
+
+/// Pure parse so it is unit-testable without an AppHandle. Any parse failure
+/// (missing content, bad JSON) collapses to defaults.
+fn parse_settings(text: &str) -> Settings {
+    serde_json::from_str::<Settings>(text).unwrap_or_default()
+}
+
+/// `<app-config-dir>/settings.json`.
+fn settings_path(app: &tauri::AppHandle) -> Option<PathBuf> {
+    app.path().app_config_dir().ok().map(|d| d.join("settings.json"))
+}
+
+fn load_settings(app: &tauri::AppHandle) -> Settings {
+    settings_path(app)
+        .and_then(|p| fs::read_to_string(p).ok())
+        .map(|t| parse_settings(&t))
+        .unwrap_or_default()
+}
+
 /// `<dir-of-executable>/sovrana-connect.json`.
 fn config_path() -> Option<PathBuf> {
     let exe = std::env::current_exe().ok()?;
@@ -121,6 +158,22 @@ fn load_config() -> Config {
 #[tauri::command]
 fn get_config() -> Config {
     load_config()
+}
+
+#[tauri::command]
+fn get_settings(app: tauri::AppHandle) -> Settings {
+    load_settings(&app)
+}
+
+#[tauri::command]
+fn set_auto_update(app: tauri::AppHandle, enabled: bool) -> Result<(), String> {
+    let path = settings_path(&app).ok_or("no app config dir")?;
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let text = serde_json::to_string_pretty(&Settings { auto_update: enabled })
+        .map_err(|e| e.to_string())?;
+    fs::write(&path, text).map_err(|e| e.to_string())
 }
 
 /// TCP-connect to host:port from the URL with a short timeout. `true` = reachable.
@@ -199,7 +252,36 @@ async fn open_service(app: tauri::AppHandle, id: String) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_config, check_endpoint, open_service])
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
+        .invoke_handler(tauri::generate_handler![
+            get_config,
+            check_endpoint,
+            open_service,
+            get_settings,
+            set_auto_update
+        ])
         .run(tauri::generate_context!())
         .expect("error while running SovranaConnect");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn absent_or_garbage_defaults_to_auto_update_on() {
+        assert!(parse_settings("not json at all").auto_update);
+        assert!(parse_settings("{}").auto_update);
+    }
+
+    #[test]
+    fn explicit_false_is_respected() {
+        assert!(!parse_settings(r#"{"auto_update":false}"#).auto_update);
+    }
+
+    #[test]
+    fn explicit_true_is_respected() {
+        assert!(parse_settings(r#"{"auto_update":true}"#).auto_update);
+    }
 }

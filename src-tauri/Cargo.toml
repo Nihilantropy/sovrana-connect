@@ -1,6 +1,6 @@
 [package]
 name = "sovrana-connect"
-version = "0.0.2"
+version = "0.0.3"
 description = "SovranaConnect — native client for SovranaAI"
 edition = "2021"
 
@@ -15,6 +15,8 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 url = "2"
