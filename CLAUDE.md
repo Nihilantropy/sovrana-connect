@@ -67,6 +67,11 @@ Toggle OFF → branded "Nuova versione disponibile" screen with an **Aggiorna or
 button. Multi-service adds zero latency (launcher renders first, check runs in
 background); single-service races the check before the redirect.
 
+The design/plan scaffolding for this feature — `docs/superpowers/specs/2026-06-26-auto-update-design.md`,
+`docs/superpowers/plans/2026-06-26-auto-update.md` and the review diff in
+`.superpowers/sdd/` (~41 KB total) — describes work that is **already in `main`
+(v0.0.3)**. Archivable: the shipped behaviour is this section plus `docs/RELEASE.md`.
+
 ## Distribution (D35)
 
 - Shipped as a signed-or-unsigned **executable from a private git repo** —
@@ -91,7 +96,8 @@ launcher added 2026-06-10 (D37).
 
 Architecture (deliberately tiny — see `docs/DESIGN.md`):
 
-- **Rust shell** (`src-tauri/src/lib.rs`) exposes three commands:
+- **Rust shell** (`src-tauri/src/lib.rs`) exposes five commands (the
+  `invoke_handler` list is the authority):
   - `get_config()` → resolves the **service catalog** (`{title, services[]}`).
     Baked defaults (Archive `:3000` + Mail `:8501` on localhost), overridable
     per-customer by a `sovrana-connect.json` dropped **next to the executable**
@@ -104,6 +110,8 @@ Architecture (deliberately tiny — see `docs/DESIGN.md`):
     (label `svc-<id>`, dark theme); focuses the existing window if already open.
     The endpoint is resolved in Rust from the config — the webview can never
     point a service window at an arbitrary URL.
+  - `get_settings()` / `set_auto_update(bool)` → the auto-update preference in
+    `<app-config-dir>/settings.json` (v0.0.3, D53 — see the Settings section above).
 - **Front-end** (`index.html` + `src/main.ts`):
   - **N services** → branded launcher: tile per service (name, description,
     status dot), probes every 20s + on focus, click → `open_service`.
@@ -135,6 +143,9 @@ build on** — Tauri compiles a native binary per OS, there is no cross-build he
 ```bash
 npm install            # JS deps (one-time)
 npm run build          # tsc type-check + vite build → dist/  (no native deps; runs anywhere incl. WSL)
+npx tsc --noEmit       # type-check alone      — CI `quality` gate, no build output
+cargo test --manifest-path src-tauri/Cargo.toml   # 3 Rust unit tests — blocking CI gate
+                       # (compiles the Rust shell: same OS deps as `tauri build`, so not on bare WSL)
 npm run tauri dev      # hot-reload dev app   (needs the OS webview + Rust)
 npm run tauri build    # release bundle       (needs the OS webview + Rust)
 npm run icon           # regenerate the icon set from the S mark (needs devDep `sharp`)
@@ -172,11 +183,23 @@ GitHub Actions matrix (Tauri compiles per-OS). Private repo → minutes are
 billed (Linux 1× / Windows 2× / macOS 10×); default spending limit `$0` means
 Actions **stops** at the free cap, never auto-charges.
 
-- **push to `main`** → Linux + Windows compile-sanity (~24 billed min). Catches
-  native breakage that can't surface on WSL. No release.
-- **tag `v*`** → adds the 10× macOS job and drafts a **GitHub Release** with the
-  real artifacts (`.exe` NSIS + `.dmg`, Apple Silicon). ~124 billed min.
+Three jobs, not two:
+
+- **`sanity`** — **push to `main`** *and* every **`pull_request`** → Linux + Windows
+  compile gate (~24 billed min). Catches native breakage that can't surface on WSL.
+  Runs `tauri-action` with `--no-bundle`: no installers, and — since
+  `createUpdaterArtifacts` is on — **no updater signing**, so this job needs no
+  signing key. Skipped on tags. No release.
+- **`quality`** — same triggers, ubuntu-only (lint/test need no Windows):
+  `npx tsc --noEmit`, `cargo fmt --check`, `cargo clippy --all-targets -D warnings`,
+  `cargo test`. Blocking. Deliberately expandable (eslint, cargo-audit, …).
+- **`release`** — **tag `v*`** only → Windows + macOS (10×, tag-only by design) and
+  drafts a **GitHub Release** with the real artifacts (`.exe` NSIS + `.dmg`, Apple
+  Silicon), signed with `TAURI_SIGNING_PRIVATE_KEY`. ~120 billed min.
 - **manual** → `workflow_dispatch` button for zero auto-burn.
+
+The macOS cost tier is a **separate job**, not a conditional matrix row: a job-level
+`if` cannot read the `matrix` context (comment at the top of the workflow).
 
 The Linux job is an **off-target compile gate** (delivery targets are Windows +
 macOS per D35) — drop it to save the 1×. Signing is skipped (unsigned OK for
@@ -200,6 +223,38 @@ adding one object. No rebuild.** Exactly one service → the app skips the
 launcher and opens it full-screen. A v1 file with a bare `endpoint` field still
 works. If the file is absent the app falls back to its baked defaults. The real
 per-customer file is git-ignored; only the `.example.json` template is committed.
+
+### Contract divergence with sovrana-suite (read before touching `load_config`)
+
+The suite already **generates** that file: `sovrana-suite/scripts/render-catalog.sh`
+renders `sovrana-connect.json` from `suite.yaml` (every service with `connect: true`,
+endpoint `http://$SUITE_LAN_HOST:<port>`) and the `catalog` container serves it at
+**`:8088/sovrana-connect.json`**. Four things follow, and three of them are drift:
+
+- **The HTTP fetch does not exist.** `render-catalog.sh` claims "SovranaConnect v0.0.3
+  fetches it from A (zero desktop visits per new tile)". It does not: `load_config()`
+  reads **only** `<exe-dir>/sovrana-connect.json` (`config_path()` = `current_exe()`'s
+  parent), and there is no HTTP client in `src-tauri/Cargo.toml` (`tauri`,
+  `tauri-plugin-updater`, `tauri-plugin-process`, `serde`, `serde_json`, `url` — no
+  `reqwest`, no `tauri-plugin-http`) nor any `fetch()` in `src/`. Today the rendered
+  JSON still has to be **copied next to the executable by hand, per desktop**. Either
+  implement the fetch (with the file as offline fallback — D35 invariant) or correct
+  the suite's comment; don't leave the suite believing a capability we don't ship.
+- **The baked defaults are stale.** `default_services()` ships Archive
+  `http://127.0.0.1:3000` + Mail `http://127.0.0.1:8501`; the suite publishes Archive
+  on **`:8080`** and the Mail UI on **`:8090`** (edge basic-auth proxy in front of the
+  container's 8501) with id **`mail-dashboard`** — `mail` in `suite.yaml` is the
+  headless poller (`port: 0`, `connect: false`). A config-less install therefore
+  probes three wrong things.
+- **A service the file never contemplated:** `ui` = **SovranaUI** on **`:8650`**
+  (agent profile, D86) is `connect: true` and is now the customer's main tile —
+  the app's "Mail + Archive" framing above predates it. `brain-web` (`:8640`) is
+  published but `connect: false`, so it is deliberately *not* a tile.
+- **Connect is a release gate of the suite, and doesn't know it.** `sovrana-suite/CLAUDE.md`
+  ("UX contract rule"): a service may not be `connect: true` without an Italian
+  client-facing `description`, a working `health` endpoint, **and "a verified tile
+  render in the real SovranaConnect app" (human gate)**. Breaking the launcher blocks
+  suite releases, not just this repo's.
 
 ## Brand & UI/UX (binding)
 
