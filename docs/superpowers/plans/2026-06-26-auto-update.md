@@ -1,3 +1,9 @@
+---
+tipo: piano
+stato: da-classificare
+updated: 2026-06-26
+rif: [D35, D36]
+---
 # SovranaConnect Auto-Update Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

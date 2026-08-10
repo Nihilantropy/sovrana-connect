@@ -1,3 +1,9 @@
+---
+tipo: riferimento
+stato: da-classificare
+updated: 2026-06-26
+rif: [D53]
+---
 # Releasing SovranaConnect
 
 Updates only reach clients from a **published, non-draft, latest** GitHub Release

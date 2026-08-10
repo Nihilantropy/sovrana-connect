@@ -1,3 +1,9 @@
+---
+tipo: design
+stato: implementato
+updated: 2026-06-26
+rif: [D35, D33, D53, D37, D36, D34]
+---
 # SovranaConnect — v0.0.1 design brief
 
 Source: vault **D35** (2026-06-08). This file is the build brief for the first

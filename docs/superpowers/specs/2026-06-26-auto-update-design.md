@@ -1,3 +1,9 @@
+---
+tipo: design
+stato: da-classificare
+updated: 2026-06-26
+rif: [D35, D36, D37]
+---
 # SovranaConnect auto-update — design
 
 - **Date:** 2026-06-26
