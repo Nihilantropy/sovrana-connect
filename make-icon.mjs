@@ -1,7 +1,7 @@
 import sharp from "sharp";
 
-const SRC = "/home/crea/projects/passive-income/sovrana-connect/src-tauri/s-mark-source.png";
-const OUT = "/home/crea/projects/passive-income/sovrana-connect/src-tauri/app-icon-master.png";
+const SRC = "/home/crea/projects/sovrana-ws/sovrana-connect/src-tauri/s-mark-source.png";
+const OUT = "/home/crea/projects/sovrana-ws/sovrana-connect/src-tauri/app-icon-master.png";
 
 const CANVAS = 1024;
 const MARK = 600; // S fits inside ~58% of the tile; padding = clear space (DESIGN §4)
